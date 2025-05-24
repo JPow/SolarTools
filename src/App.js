@@ -87,23 +87,30 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('https://cors-anywhere.herokuapp.com/https://re.jrc.ec.europa.eu/api/v5_2/PVcalc', {
-        params: {
-          lat: latlng.lat,
-          lon: latlng.lng,
-          raddatabase: 'PVGIS-SARAH2',
-          pvtechchoice: 'crystSi',
-          peakpower: 10,
-          loss: 14,
-          mountingplace: 'free',
-          components: 1,
-          outputformat: 'json'
-        },
-        headers: {
-          'Origin': 'https://solar-data-tool.onrender.com'
-        }
+      const params = new URLSearchParams({
+        lat: latlng.lat,
+        lon: latlng.lng,
+        loss: 14,
+        raddatabase: 'PVGIS-SARAH2',
+        pvtechchoice: 'crystSi',
+        peakpower: 10,
+        mountingplace: 'free',
+        components: 1,
+        outputformat: 'json'
       });
-      setSolarData(response.data);
+
+      const response = await fetch(
+        `${process.env.NODE_ENV === 'production' 
+          ? 'https://solar-data-tool.onrender.com' 
+          : 'http://localhost:3001'}/api/solar-data?${params}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setSolarData(data);
     } catch (err) {
       console.error('Error fetching solar data:', err);
       if (err.response) {
