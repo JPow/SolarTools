@@ -20,16 +20,38 @@ if (process.env.NODE_ENV === 'production') {
 
 // Proxy endpoint for PVGIS API
 app.get('/api/solar-data', async (req, res) => {
+  console.log('Received request with params:', req.query);
   try {
-    const response = await axios.get('https://re.jrc.ec.europa.eu/api/v5_2/PVcalc', {
-      params: req.query
+    const pvgisUrl = 'https://re.jrc.ec.europa.eu/api/v5_2/PVcalc';
+    console.log('Making request to PVGIS:', pvgisUrl);
+    console.log('With parameters:', req.query);
+    
+    const response = await axios.get(pvgisUrl, {
+      params: req.query,
+      timeout: 10000, // 10 second timeout
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Solar-Data-Tool/1.0'
+      }
     });
+    
+    console.log('PVGIS response status:', response.status);
     res.json(response.data);
   } catch (error) {
-    console.error('Error fetching solar data:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      response: error.response ? {
+        status: error.response.status,
+        data: error.response.data
+      } : 'No response data',
+      request: error.request ? 'Request was made but no response received' : 'No request was made'
+    });
+    
     res.status(500).json({ 
       error: 'Failed to fetch solar data',
-      details: error.response?.data || error.message 
+      details: error.response?.data || error.message,
+      code: error.code
     });
   }
 });

@@ -99,6 +99,10 @@ function App() {
         outputformat: 'json'
       });
 
+      console.log('Making request to:', `${process.env.NODE_ENV === 'production' 
+        ? 'https://solar-data-tool.onrender.com' 
+        : 'http://localhost:3001'}/api/solar-data?${params}`);
+
       const response = await fetch(
         `${process.env.NODE_ENV === 'production' 
           ? 'https://solar-data-tool.onrender.com' 
@@ -106,20 +110,15 @@ function App() {
       );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.details || `HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
       setSolarData(data);
     } catch (err) {
       console.error('Error fetching solar data:', err);
-      if (err.response) {
-        setError(`API Error: ${err.response.data.message || 'Unknown error'}`);
-      } else if (err.request) {
-        setError('Network Error: Could not connect to the solar data service. Please try again in a few minutes.');
-      } else {
-        setError('Error: Failed to fetch solar data. Please try again.');
-      }
+      setError(err.message || 'Failed to fetch solar data. Please try again.');
     }
     setLoading(false);
   };
