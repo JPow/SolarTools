@@ -79,7 +79,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('https://re.jrc.ec.europa.eu/api/v5_2/PVcalc', {
+      const response = await axios.get('https://cors-anywhere.herokuapp.com/https://re.jrc.ec.europa.eu/api/v5_2/PVcalc', {
         params: {
           lat: latlng.lat,
           lon: latlng.lng,
@@ -90,6 +90,9 @@ function App() {
           mountingplace: 'free',
           components: 1,
           outputformat: 'json'
+        },
+        headers: {
+          'Origin': 'https://solar-data-tool.onrender.com'
         }
       });
       setSolarData(response.data);
@@ -98,7 +101,7 @@ function App() {
       if (err.response) {
         setError(`API Error: ${err.response.data.message || 'Unknown error'}`);
       } else if (err.request) {
-        setError('Network Error: Could not connect to the solar data service');
+        setError('Network Error: Could not connect to the solar data service. Please try again in a few minutes.');
       } else {
         setError('Error: Failed to fetch solar data. Please try again.');
       }
