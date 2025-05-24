@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import { Box, Paper, Typography, CircularProgress } from '@mui/material';
+import { Box, Paper, Typography, CircularProgress, Alert } from '@mui/material';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
 
@@ -33,6 +33,43 @@ function LocationMarker({ onLocationSelect }) {
   );
 }
 
+function SolarDataDisplay({ data }) {
+  if (!data) return null;
+
+  const { outputs } = data;
+  const { totals } = outputs;
+  const { fixed } = totals;
+
+  return (
+    <Box sx={{ p: 2 }}>
+      <Typography variant="h6" gutterBottom>Annual Solar Production</Typography>
+      <Typography variant="body1">
+        Daily Average: {fixed.E_d.toFixed(2)} kWh/day
+      </Typography>
+      <Typography variant="body1">
+        Monthly Average: {fixed.E_m.toFixed(2)} kWh/month
+      </Typography>
+      <Typography variant="body1">
+        Yearly Total: {fixed.E_y.toFixed(2)} kWh/year
+      </Typography>
+      
+      <Typography variant="h6" sx={{ mt: 2 }} gutterBottom>System Losses</Typography>
+      <Typography variant="body1">
+        Angle of Incidence Loss: {fixed.l_aoi.toFixed(2)}%
+      </Typography>
+      <Typography variant="body1">
+        Spectral Loss: {fixed.l_spec.toFixed(2)}%
+      </Typography>
+      <Typography variant="body1">
+        Temperature Loss: {fixed.l_tg.toFixed(2)}%
+      </Typography>
+      <Typography variant="body1">
+        Total Loss: {fixed.l_total.toFixed(2)}%
+      </Typography>
+    </Box>
+  );
+}
+
 function App() {
   const [loading, setLoading] = useState(false);
   const [solarData, setSolarData] = useState(null);
@@ -46,7 +83,7 @@ function App() {
         params: {
           lat: latlng.lat,
           lon: latlng.lng,
-          raddatabase: 'SARAH3',
+          raddatabase: 'PVGIS-SARAH2',
           pvtechchoice: 'crystSi',
           peakpower: 10,
           loss: 14,
@@ -57,8 +94,14 @@ function App() {
       });
       setSolarData(response.data);
     } catch (err) {
-      setError('Failed to fetch solar data. Please try again.');
       console.error('Error fetching solar data:', err);
+      if (err.response) {
+        setError(`API Error: ${err.response.data.message || 'Unknown error'}`);
+      } else if (err.request) {
+        setError('Network Error: Could not connect to the solar data service');
+      } else {
+        setError('Error: Failed to fetch solar data. Please try again.');
+      }
     }
     setLoading(false);
   };
@@ -91,15 +134,14 @@ function App() {
       )}
 
       {error && (
-        <Paper sx={{ p: 2, m: 2, bgcolor: 'error.light' }}>
-          <Typography color="error">{error}</Typography>
-        </Paper>
+        <Alert severity="error" sx={{ m: 2 }}>
+          {error}
+        </Alert>
       )}
 
       {solarData && (
-        <Paper sx={{ p: 2, m: 2, maxHeight: '300px', overflow: 'auto' }}>
-          <Typography variant="h6">Solar Data Results</Typography>
-          <pre>{JSON.stringify(solarData, null, 2)}</pre>
+        <Paper sx={{ m: 2, maxHeight: '300px', overflow: 'auto' }}>
+          <SolarDataDisplay data={solarData} />
         </Paper>
       )}
     </Box>
