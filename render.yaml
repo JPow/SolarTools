@@ -1,6 +1,6 @@
 services:
   # Frontend service
-  - type: web
+  - type: static
     name: solar-data-tool
     env: static
     buildCommand: npm install && npm run build
@@ -20,4 +20,6 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 3001 
+        value: 10000
+      - key: CORS_ORIGIN
+        value: https://solar-data-tool.onrender.com 

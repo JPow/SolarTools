@@ -8,15 +8,15 @@ const port = process.env.PORT || 3001;
 
 // Enable CORS for your React app
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? 'https://solar-data-tool.onrender.com'  // Your Render domain
-    : 'http://localhost:3000'  // Your local React app
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Accept']
 }));
 
-// Serve static files from the React app in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'build')));
-}
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
 // Proxy endpoint for PVGIS API
 app.get('/api/solar-data', async (req, res) => {
@@ -48,7 +48,8 @@ app.get('/api/solar-data', async (req, res) => {
       request: error.request ? 'Request was made but no response received' : 'No request was made'
     });
     
-    res.status(500).json({ 
+    // Always return JSON response, even for errors
+    res.status(error.response?.status || 500).json({ 
       error: 'Failed to fetch solar data',
       details: error.response?.data || error.message,
       code: error.code
@@ -56,13 +57,16 @@ app.get('/api/solar-data', async (req, res) => {
   }
 });
 
-// Handle React routing in production
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({
+    error: 'Internal server error',
+    details: err.message
   });
-}
+});
 
 app.listen(port, () => {
   console.log(`Proxy server running on port ${port}`);
+  console.log('CORS origin:', process.env.CORS_ORIGIN || 'http://localhost:3000');
 }); 
