@@ -99,22 +99,40 @@ function App() {
         outputformat: 'json'
       });
 
-      console.log('Making request to:', `${process.env.NODE_ENV === 'production' 
-        ? 'https://solar-data-tool.onrender.com' 
-        : 'http://localhost:3001'}/api/solar-data?${params}`);
+      const apiUrl = `${process.env.NODE_ENV === 'production' 
+        ? 'https://solar-data-tool-api.onrender.com' 
+        : 'http://localhost:3001'}/api/solar-data?${params}`;
 
-      const response = await fetch(
-        `${process.env.NODE_ENV === 'production' 
-          ? 'https://solar-data-tool.onrender.com' 
-          : 'http://localhost:3001'}/api/solar-data?${params}`
-      );
+      console.log('Making request to:', apiUrl);
 
+      const response = await fetch(apiUrl);
+
+      // First check if the response is ok
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || `HTTP error! status: ${response.status}`);
+        // Try to parse error response as JSON
+        let errorMessage;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.details || errorData.error || `HTTP error! status: ${response.status}`;
+        } catch (e) {
+          // If parsing fails, use status text
+          errorMessage = response.statusText || `HTTP error! status: ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
-      
-      const data = await response.json();
+
+      // Try to parse successful response
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        throw new Error('Invalid JSON response from server');
+      }
+
+      if (!data || !data.outputs) {
+        throw new Error('Invalid data format received from server');
+      }
+
       setSolarData(data);
     } catch (err) {
       console.error('Error fetching solar data:', err);
