@@ -1,6 +1,6 @@
 services:
   # Frontend service
-  - type: static
+  - type: web
     name: solar-data-tool
     env: static
     buildCommand: npm install && npm run build
