@@ -40,31 +40,39 @@ function SolarDataDisplay({ data }) {
   const { totals } = outputs;
   const { fixed } = totals;
 
+  // Helper function to format numbers or strings
+  const formatValue = (value) => {
+    if (typeof value === 'number') {
+      return value.toFixed(2);
+    }
+    return value;
+  };
+
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="h6" gutterBottom>Annual Solar Production</Typography>
       <Typography variant="body1">
-        Daily Average: {fixed.E_d.toFixed(2)} kWh/day
+        Daily Average: {formatValue(fixed.E_d)} kWh/day
       </Typography>
       <Typography variant="body1">
-        Monthly Average: {fixed.E_m.toFixed(2)} kWh/month
+        Monthly Average: {formatValue(fixed.E_m)} kWh/month
       </Typography>
       <Typography variant="body1">
-        Yearly Total: {fixed.E_y.toFixed(2)} kWh/year
+        Yearly Total: {formatValue(fixed.E_y)} kWh/year
       </Typography>
       
       <Typography variant="h6" sx={{ mt: 2 }} gutterBottom>System Losses</Typography>
       <Typography variant="body1">
-        Angle of Incidence Loss: {fixed.l_aoi.toFixed(2)}%
+        Angle of Incidence Loss: {formatValue(fixed.l_aoi)}%
       </Typography>
       <Typography variant="body1">
-        Spectral Loss: {fixed.l_spec.toFixed(2)}%
+        Spectral Loss: {formatValue(fixed.l_spec)}%
       </Typography>
       <Typography variant="body1">
-        Temperature Loss: {fixed.l_tg.toFixed(2)}%
+        Temperature Loss: {formatValue(fixed.l_tg)}%
       </Typography>
       <Typography variant="body1">
-        Total Loss: {fixed.l_total.toFixed(2)}%
+        Total Loss: {formatValue(fixed.l_total)}%
       </Typography>
     </Box>
   );
