@@ -33,12 +33,19 @@ function LocationMarker({ onLocationSelect }) {
   );
 }
 
-function SolarDataDisplay({ data }) {
+function SolarDataDisplay({ data, location }) {
   if (!data) return null;
 
   const { outputs } = data;
   const { totals } = outputs;
   const { fixed } = totals;
+
+  // Debug log to see the full data structure
+  console.log('Display Component Data:', {
+    meta: data.meta,
+    inputs: data.inputs,
+    fixed: fixed
+  });
 
   // Helper function to format numbers or strings
   const formatValue = (value) => {
@@ -50,7 +57,21 @@ function SolarDataDisplay({ data }) {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h6" gutterBottom>Annual Solar Production</Typography>
+      <Typography variant="h6" gutterBottom>Location Details</Typography>
+      <Typography variant="body1">
+        Latitude: {formatValue(location.lat)}°
+      </Typography>
+      <Typography variant="body1">
+        Longitude: {formatValue(location.lng)}°
+      </Typography>
+      <Typography variant="body1">
+        Optimal Slope: {formatValue(data.inputs.mounting_system.fixed.slope.value)}°
+      </Typography>
+      <Typography variant="body1">
+        Optimal Azimuth: {formatValue(data.inputs.mounting_system.fixed.azimuth.value)}°
+      </Typography>
+
+      <Typography variant="h6" sx={{ mt: 2 }} gutterBottom>Annual Solar Production</Typography>
       <Typography variant="body1">
         Daily Average: {formatValue(fixed.E_d)} kWh/day
       </Typography>
@@ -90,12 +111,11 @@ function App() {
     const value = e.target.value;
     setSolarSizeInput(value);
     
-    // Only update the actual solar size if we have a valid number
     const numValue = Number(value);
     if (!isNaN(numValue) && numValue > 0) {
       setSolarSize(numValue);
     } else {
-      setSolarSize(null); // Set to null when input is empty or invalid
+      setSolarSize(null);
     }
   };
 
@@ -112,7 +132,8 @@ function App() {
         peakpower: size,
         mountingplace: 'free',
         components: 1,
-        outputformat: 'json'
+        outputformat: 'json',
+        optimalangles: 1
       });
 
       const apiUrl = `${process.env.NODE_ENV === 'production' 
@@ -137,6 +158,12 @@ function App() {
       let data;
       try {
         data = await response.json();
+        console.log('API Response Structure:', {
+          meta: data.meta,
+          inputs: data.inputs,
+          outputs: data.outputs,
+          optimal_angles: data.meta?.optimal_angles
+        });
       } catch (e) {
         throw new Error('Invalid JSON response from server');
       }
@@ -213,7 +240,7 @@ function App() {
 
       {solarData && (
         <Paper sx={{ m: 2, maxHeight: '300px', overflow: 'auto' }}>
-          <SolarDataDisplay data={solarData} />
+          <SolarDataDisplay data={solarData} location={selectedLocation} />
         </Paper>
       )}
     </Box>
