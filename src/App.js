@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import { Box, Paper, Typography, CircularProgress, Alert } from '@mui/material';
+import { Box, Paper, Typography, CircularProgress, Alert, TextField } from '@mui/material';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
 
@@ -82,8 +82,24 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [solarData, setSolarData] = useState(null);
   const [error, setError] = useState(null);
+  const [solarSize, setSolarSize] = useState(10);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [solarSizeInput, setSolarSizeInput] = useState('10');
 
-  const handleLocationSelect = async (latlng) => {
+  const handleSolarSizeChange = (e) => {
+    const value = e.target.value;
+    setSolarSizeInput(value);
+    
+    // Only update the actual solar size if we have a valid number
+    const numValue = Number(value);
+    if (!isNaN(numValue) && numValue > 0) {
+      setSolarSize(numValue);
+    } else {
+      setSolarSize(null); // Set to null when input is empty or invalid
+    }
+  };
+
+  const fetchSolarData = async (latlng, size) => {
     setLoading(true);
     setError(null);
     try {
@@ -93,7 +109,7 @@ function App() {
         loss: 14,
         raddatabase: 'PVGIS-SARAH2',
         pvtechchoice: 'crystSi',
-        peakpower: 10,
+        peakpower: size,
         mountingplace: 'free',
         components: 1,
         outputformat: 'json'
@@ -107,21 +123,17 @@ function App() {
 
       const response = await fetch(apiUrl);
 
-      // First check if the response is ok
       if (!response.ok) {
-        // Try to parse error response as JSON
         let errorMessage;
         try {
           const errorData = await response.json();
           errorMessage = errorData.details || errorData.error || `HTTP error! status: ${response.status}`;
         } catch (e) {
-          // If parsing fails, use status text
           errorMessage = response.statusText || `HTTP error! status: ${response.status}`;
         }
         throw new Error(errorMessage);
       }
 
-      // Try to parse successful response
       let data;
       try {
         data = await response.json();
@@ -141,6 +153,19 @@ function App() {
     setLoading(false);
   };
 
+  const handleLocationSelect = async (latlng) => {
+    setSelectedLocation(latlng);
+    await fetchSolarData(latlng, solarSize);
+  };
+
+  useEffect(() => {
+    if (selectedLocation && solarSize !== null) {
+      fetchSolarData(selectedLocation, solarSize);
+    } else if (solarSize === null) {
+      setSolarData(null); // Clear the data when input is empty
+    }
+  }, [solarSize]);
+
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
@@ -148,6 +173,18 @@ function App() {
         <Typography variant="subtitle1">Click on your location to get solar data</Typography>
       </Box>
       
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <TextField
+          label="Solar Size (KWp)"
+          type="number"
+          value={solarSizeInput}
+          onChange={handleSolarSizeChange}
+          inputProps={{ min: 1, max: 1000 }}
+          sx={{ width: '200px' }}
+          disabled={!selectedLocation}
+        />
+      </Box>
+
       <Box sx={{ flex: 1, position: 'relative' }}>
         <MapContainer
           center={[56.26392, 9.501785]} // Center of Denmark
