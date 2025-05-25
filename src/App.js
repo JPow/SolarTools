@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import { Box, Paper, Typography, CircularProgress, Alert, TextField } from '@mui/material';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
 
@@ -39,13 +40,10 @@ function SolarDataDisplay({ data, location }) {
   const { outputs } = data;
   const { totals } = outputs;
   const { fixed } = totals;
-
-  // Debug log to see the full data structure
-  console.log('Display Component Data:', {
-    meta: data.meta,
-    inputs: data.inputs,
-    fixed: fixed
-  });
+  const monthlyData = outputs.monthly.fixed.map(item => ({
+    month: new Date(2000, item.month - 1).toLocaleString('default', { month: 'short' }),
+    energy: item.E_m
+  }));
 
   // Helper function to format numbers or strings
   const formatValue = (value) => {
@@ -57,44 +55,46 @@ function SolarDataDisplay({ data, location }) {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h6" gutterBottom>Location Details</Typography>
-      <Typography variant="body1">
-        Latitude: {formatValue(location.lat)}°
-      </Typography>
-      <Typography variant="body1">
-        Longitude: {formatValue(location.lng)}°
-      </Typography>
-      <Typography variant="body1">
-        Optimal Slope: {formatValue(data.inputs.mounting_system.fixed.slope.value)}°
-      </Typography>
-      <Typography variant="body1">
-        Optimal Azimuth: {formatValue(data.inputs.mounting_system.fixed.azimuth.value)}°
-      </Typography>
+      <Box sx={{ display: 'flex', gap: 4 }}>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h6" gutterBottom>Location Details</Typography>
+          <Typography variant="body1">
+            Latitude: {formatValue(location.lat)}°
+          </Typography>
+          <Typography variant="body1">
+            Longitude: {formatValue(location.lng)}°
+          </Typography>
+          <Typography variant="body1">
+            Optimal Slope: {formatValue(data.inputs.mounting_system.fixed.slope.value)}°
+          </Typography>
+          <Typography variant="body1">
+            Optimal Azimuth: {formatValue(data.inputs.mounting_system.fixed.azimuth.value)}°
+          </Typography>
 
-      <Typography variant="h6" sx={{ mt: 2 }} gutterBottom>Annual Solar Production</Typography>
-      <Typography variant="body1">
-        Daily Average: {formatValue(fixed.E_d)} kWh/day
-      </Typography>
-      <Typography variant="body1">
-        Monthly Average: {formatValue(fixed.E_m)} kWh/month
-      </Typography>
-      <Typography variant="body1">
-        Yearly Total: {formatValue(fixed.E_y)} kWh/year
-      </Typography>
-      
-      <Typography variant="h6" sx={{ mt: 2 }} gutterBottom>System Losses</Typography>
-      <Typography variant="body1">
-        Angle of Incidence Loss: {formatValue(fixed.l_aoi)}%
-      </Typography>
-      <Typography variant="body1">
-        Spectral Loss: {formatValue(fixed.l_spec)}%
-      </Typography>
-      <Typography variant="body1">
-        Temperature Loss: {formatValue(fixed.l_tg)}%
-      </Typography>
-      <Typography variant="body1">
-        Total Loss: {formatValue(fixed.l_total)}%
-      </Typography>
+          <Typography variant="h6" sx={{ mt: 2 }} gutterBottom>Solar Energy Production</Typography>
+          <Typography variant="body1">
+            Daily Average: {formatValue(fixed.E_d)} kWh/day
+          </Typography>
+          <Typography variant="body1">
+            Monthly Average: {formatValue(fixed.E_m)} kWh/month
+          </Typography>
+          <Typography variant="body1">
+            Yearly Total: {formatValue(fixed.E_y)} kWh/year
+          </Typography>
+        </Box>
+
+        <Box sx={{ width: '50%', height: 300 }}>
+          <ResponsiveContainer>
+            <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis label={{ value: 'kWh', angle: -90, position: 'insideLeft' }} />
+              <Tooltip formatter={(value) => [`${value.toFixed(2)} kWh`, 'Energy']} />
+              <Bar dataKey="energy" fill="#1976d2" />
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
+      </Box>
     </Box>
   );
 }
@@ -239,7 +239,7 @@ function App() {
       )}
 
       {solarData && (
-        <Paper sx={{ m: 2, maxHeight: '300px', overflow: 'auto' }}>
+        <Paper sx={{ m: 2, maxHeight: '600px', overflow: 'auto' }}>
           <SolarDataDisplay data={solarData} location={selectedLocation} />
         </Paper>
       )}
