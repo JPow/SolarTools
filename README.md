@@ -2,6 +2,12 @@
 
 A web application that enables Energy Communities to estimate solar power generation potential for specific locations in Denmark. This tool helps communities make informed decisions about solar energy investments by providing accurate solar radiation and PV system performance data.
 
+## Default Settings
+- Free standing solar panels (not roof top)
+- Slope and azimuth is optimised
+- System loss set at 14% (this is not capacity factor)
+- 10 kwp system (users can change this via the input field in the app)
+
 ## Features
 
 - Interactive map interface for location selection
